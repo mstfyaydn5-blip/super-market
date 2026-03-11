@@ -1,189 +1,211 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<style>
+    /* ===== Animation (مثل الداشبورد) ===== */
+    .enter{
+        opacity:0;
+        transform:translateY(14px);
+        animation: enter .55s ease forwards;
+        will-change: transform, opacity;
+    }
+    @keyframes enter{
+        to{opacity:1; transform:translateY(0)}
+    }
+    .d1{ animation-delay:.05s } .d2{ animation-delay:.12s } .d3{ animation-delay:.18s }
+    .d4{ animation-delay:.24s } .d5{ animation-delay:.30s } .d6{ animation-delay:.36s }
+    .d7{ animation-delay:.42s } .d8{ animation-delay:.48s } .d9{ animation-delay:.54s }
 
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <div>
-            <h4 class="m-0">📋 سجل الموظفين</h4>
-            <div class="text-muted small mt-1">
-                المجموع: <strong>{{ $activities->total() }}</strong> حركة
-            </div>
-        </div>
+    /* ===== UI ===== */
+    .card-soft{
+        border:1px solid #e6e8ef; border-radius:16px; background:#fff;
+        box-shadow:0 10px 25px rgba(0,0,0,.04);
+    }
+    .btn-soft{ border-radius:12px; padding:.55rem .9rem; font-weight:800; }
+    .btn-soft.btn-primary{ box-shadow:0 10px 20px rgba(37,99,235,.18); }
+    .form-control, .form-select{
+        border-radius:12px; border:1px solid #e6e8ef; padding:.55rem .75rem;
+    }
+    .chip{
+        display:inline-flex; align-items:center; gap:.35rem;
+        padding:.35rem .6rem; border-radius:999px;
+        border:1px solid #e6e8ef; background:#fff;
+        font-weight:800; color:#374151;
+    }
+    .badge-soft{
+        background:#f1f6ff; color:#2563eb; border:1px solid #dbe7ff;
+        font-weight:900; border-radius:999px; padding:.35rem .55rem;
+        white-space:nowrap;
+    }
 
-        <div class="d-flex gap-2">
-            <a href="{{ url()->current() }}?{{ http_build_query(request()->query()) }}" class="btn btn-outline-primary">
-                🔄 تحديث
-            </a>
-            <a href="{{ route('activities.index') }}" class="btn btn-outline-secondary">
-                🧹 مسح الفلاتر
-            </a>
-        </div>
+    /* ===== Timeline ===== */
+    .timeline{ position:relative; padding-right:18px; }
+    .timeline:before{
+        content:""; position:absolute; right:6px; top:0; bottom:0;
+        width:2px; background:#edf0f5;
+    }
+    .t-item{ position:relative; padding:14px 14px 14px 10px; }
+    .t-dot{
+        position:absolute; right:0; top:22px;
+        width:14px; height:14px; border-radius:50%;
+        background:#2563eb; box-shadow:0 0 0 4px #e8f0ff;
+    }
+    .t-card{
+        border:1px solid #e6e8ef; border-radius:14px; background:#fff;
+        padding:12px 14px;
+    }
+    .t-title{ font-weight:900; margin-bottom:4px; }
+    .t-meta{ color:#6b7280; font-size:12px; }
+
+    .desc-ul{ margin:6px 0 0 0; padding-right:18px; }
+    .desc-ul li{ margin-bottom:4px; color:#4b5563; }
+
+    .pagination{ justify-content:center; margin-bottom:0; }
+    .page-link{ border-radius:10px !important; }
+
+    @media (prefers-reduced-motion: reduce){
+        .enter{ animation:none; opacity:1; transform:none; }
+    }
+</style>
+
+{{-- Header --}}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 enter d1">
+    <div class="d-flex align-items-center gap-2">
+        <div class="chip"><i class="bi bi-receipt"></i> سجل الموظفين</div>
+        <span class="text-muted small">متابعة نشاط الإضافة/التعديل/الحذف</span>
     </div>
 
+    <div class="d-flex gap-2">
+        <a href="{{ route('activities.index') }}" class="btn btn-outline-secondary btn-soft">
+            <i class="bi bi-arrow-clockwise"></i> تحديث
+        </a>
+    </div>
+</div>
 
-    <form method="GET" class="row g-2 align-items-end mb-3">
-        <div class="col-md-3">
-            <label class="form-label">الموظف</label>
-            <select name="user_id" class="form-select">
-                <option value="">الكل</option>
-                @foreach($users as $u)
-                    <option value="{{ $u->id }}" @selected(request('user_id') == $u->id)>
-                        {{ $u->name }}
-                    </option>
-                @endforeach
-            </select>
+{{-- Filters --}}
+<div class="card-soft p-3 mb-3 enter d2">
+    <form method="GET" action="{{ route('activities.index') }}" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label mb-1">بحث</label>
+            <input class="form-control" name="q" value="{{ request('q') }}"
+                   placeholder="مثال: إضافة / حذف / اسم منتج...">
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">نوع الحركة</label>
-            <select name="action" class="form-select">
+            <label class="form-label mb-1">نوع العملية</label>
+            <select class="form-select" name="action">
                 <option value="">الكل</option>
-                @foreach($actions as $key => $label)
-                    <option value="{{ $key }}" @selected(request('action') == $key)>
-                        {{ $label }}
-                    </option>
-                @endforeach
+                <option value="create" @selected(request('action')=='create')>إضافة</option>
+                <option value="update" @selected(request('action')=='update')>تعديل</option>
+                <option value="delete" @selected(request('action')=='delete')>حذف</option>
             </select>
         </div>
 
         <div class="col-md-2">
-            <label class="form-label">من</label>
-            <input type="date" name="from" class="form-control" value="{{ request('from') }}">
+            <label class="form-label mb-1">من تاريخ</label>
+            <input type="date" class="form-control" name="from" value="{{ request('from') }}">
         </div>
 
         <div class="col-md-2">
-            <label class="form-label">إلى</label>
-            <input type="date" name="to" class="form-control" value="{{ request('to') }}">
+            <label class="form-label mb-1">إلى تاريخ</label>
+            <input type="date" class="form-control" name="to" value="{{ request('to') }}">
         </div>
 
-        <div class="col-md-2">
-            <label class="form-label">بحث بالمنتج</label>
-            <input type="text" name="q" class="form-control" placeholder="اسم المنتج..."
-                   value="{{ request('q') }}">
-        </div>
-
-        <div class="col-12 d-flex gap-2 mt-2">
-            <button class="btn btn-primary">فلتر</button>
-            <a href="{{ route('activities.index') }}" class="btn btn-outline-secondary">مسح</a>
+        <div class="col-md-1 d-grid">
+            <button class="btn btn-primary btn-soft"><i class="bi bi-funnel"></i></button>
         </div>
     </form>
+</div>
 
+<div class="d-flex flex-wrap gap-2 mb-3 enter d3">
+    <span class="badge-soft"><i class="bi bi-list-ul"></i> العدد الكلي: {{ $activities->total() }}</span>
+    @if(request()->hasAny(['q','action','from','to']))
+        <a class="badge-soft text-decoration-none" href="{{ route('activities.index') }}">
+            <i class="bi bi-x-circle"></i> إلغاء الفلاتر
+        </a>
+    @endif
+</div>
 
-    <div class="card shadow-sm">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th style="width: 160px;">الوقت</th>
-                        <th style="width: 180px;">الموظف</th>
-                        <th style="width: 160px;">الحركة</th>
-                        <th>المنتج</th>
-                        <th style="width: 260px;">تفاصيل</th>
-                    </tr>
-                </thead>
+{{-- Timeline --}}
+<div class="card-soft p-3 enter d4">
+    <div class="timeline">
+        @forelse($activities as $i => $a)
+            @php
+                // اسم المستخدم من أكثر من مصدر
+                $userName = $a->user->name ?? ($a->user_name ?? ($a->username ?? ($a->by_user ?? '—')));
 
-                <tbody>
-                @forelse($activities as $a)
-                    @php
-                        $label = $actions[$a->action] ?? $a->action;
+                // نوع العملية
+                $action = $a->action ?? ($a->type ?? ($a->event ?? ''));
 
+                // الوصف قد يكون string أو array أو JSON
+                $desc = $a->description ?? ($a->details ?? ($a->message ?? ''));
 
-                        $badge = match($a->action) {
-                            'created' => 'bg-success',
-                            'updated' => 'bg-warning text-dark',
-                            'deleted' => 'bg-danger',
-                            'image_added' => 'bg-info text-dark',
-                            'image_deleted' => 'bg-secondary',
-                            'main_image_changed' => 'bg-primary',
-                            default => 'bg-light text-dark',
-                        };
+                // إذا string ويمثل JSON نحوله Array
+                if (is_string($desc)) {
+                    $try = json_decode($desc, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($try)) {
+                        $desc = $try;
+                    }
+                }
 
-                        $productName = $a->product->name ?? ($a->details['name'] ?? null);
-                    @endphp
+                $when = optional($a->created_at)->format('Y-m-d H:i');
 
-                    <tr>
-                        <td>
-                            <div>{{ $a->created_at->format('Y-m-d') }}</div>
-                            <div class="small text-muted">{{ $a->created_at->format('H:i') }}</div>
-                        </td>
+                $badgeTxt = $action;
+                if($action==='create') $badgeTxt='إضافة';
+                if($action==='update') $badgeTxt='تعديل';
+                if($action==='delete') $badgeTxt='حذف';
+                if(!$badgeTxt) $badgeTxt='عملية';
 
-                        <td>
-                            <div class="fw-semibold">{{ $a->user->name ?? '—' }}</div>
-                            <div class="small text-muted">ID: {{ $a->user_id ?? '—' }}</div>
-                        </td>
+                // تأخير مختلف لكل عنصر (حتى يطلع واحد ورا الثاني)
+                $delay = 0.08 + min($i, 8) * 0.06; // أقصى شي ~ 0.56s
+            @endphp
 
-                        <td>
-                            <span class="badge {{ $badge }}">{{ $label }}</span>
-                        </td>
+            <div class="t-item enter" style="animation-delay: {{ number_format($delay, 2) }}s;">
+                <span class="t-dot"></span>
 
-                        <td>
-                            @if($a->product)
-                                <div class="d-flex align-items-center gap-2">
-                                    <a class="text-decoration-none fw-semibold"
-                                       href="{{ route('products.show', $a->product->id) }}">
-                                        {{ $a->product->name }}
-                                    </a>
+                <div class="t-card">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <div class="t-title">
+                            {{ $userName }}
+                            <span class="badge-soft ms-2">{{ $badgeTxt }}</span>
+                        </div>
+                        <div class="t-meta">{{ $when }}</div>
+                    </div>
 
-                                    <a class="btn btn-sm btn-outline-primary"
-                                       href="{{ route('products.show', $a->product_id) }}?return={{ urlencode(url()->full()) }}">
-                                     عرض
-                                    </a>
+                    {{-- عرض الوصف بشكل آمن حتى لو Array --}}
+                    @if(is_array($desc))
+                        @if(count($desc))
+                            <ul class="desc-ul">
+                                @foreach($desc as $k => $v)
+                                    <li>
+                                        <strong>{{ is_string($k) ? $k : '—' }}:</strong>
+                                        @if(is_array($v))
+                                            {{ json_encode($v, JSON_UNESCAPED_UNICODE) }}
+                                        @else
+                                            {{ (string)$v }}
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <div class="text-muted mt-1">—</div>
+                        @endif
+                    @else
+                        <div class="text-muted mt-1">{{ (string)$desc ?: '—' }}</div>
+                    @endif
 
-                                </div>
-
-                                <div class="small text-muted">#{{ $a->product_id }}</div>
-                            @else
-                                <span class="text-muted">منتج محذوف</span>
-                                @if($productName)
-                                    <div class="small text-muted">({{ $productName }})</div>
-                                @endif
-                            @endif
-                        </td>
-
-                        <td>
-                            @if(is_array($a->details) && !empty($a->details))
-                                <details>
-                                    <summary class="text-primary">عرض التفاصيل</summary>
-
-
-                                    @if(isset($a->details['old']) && isset($a->details['new']))
-                                        <div class="mt-2 small">
-                                            <div class="fw-semibold mb-1">التغييرات:</div>
-
-                                            @foreach($a->details['new'] as $key => $newVal)
-                                                @php $oldVal = $a->details['old'][$key] ?? null; @endphp
-                                                <div class="mb-1">
-                                                    <span class="text-muted">{{ $key }}:</span>
-                                                    <span class="text-danger">{{ is_array($oldVal) ? json_encode($oldVal, JSON_UNESCAPED_UNICODE) : $oldVal }}</span>
-                                                    →
-                                                    <span class="text-success">{{ is_array($newVal) ? json_encode($newVal, JSON_UNESCAPED_UNICODE) : $newVal }}</span>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <pre class="m-0 mt-2 small">{{ json_encode($a->details, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre>
-                                    @endif
-                                </details>
-                            @else
-                                <span class="text-muted">—</span>
-                            @endif
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-4">لا توجد حركات.</td>
-                    </tr>
-                @endforelse
-                </tbody>
-
-            </table>
-        </div>
-
-        <div class="card-body">
-            {{ $activities->links() }}
-        </div>
+                </div>
+            </div>
+        @empty
+            <div class="text-center text-muted py-4 enter d5">
+                <i class="bi bi-inbox"></i> ماكو نشاط حالياً
+            </div>
+        @endforelse
     </div>
 
+    <div class="pt-3 border-top enter d6" style="border-color:#e6e8ef !important;">
+        {{ $activities->appends(request()->query())->links() }}
+    </div>
 </div>
+
 @endsection

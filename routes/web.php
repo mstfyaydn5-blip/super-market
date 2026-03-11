@@ -8,6 +8,13 @@ use App\Models\User;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductActivityController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierPaymentController;
+use App\Http\Controllers\CashController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerPaymentController;
+
 
 
 Route::get('/', function () {
@@ -92,3 +99,30 @@ Route::get('/activities', [ProductActivityController::class, 'index'])
     ->middleware('auth');
 
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+});
+
+
+Route::resource('suppliers', SupplierController::class);
+
+
+
+Route::get('supplier-payments/create/{supplier}', [SupplierPaymentController::class,'create'])->name('supplier.payments.create');
+
+Route::post('supplier-payments/store', [SupplierPaymentController::class,'store'])->name('supplier.payments.store');
+
+
+
+Route::get('cash', [CashController::class,'index'])->name('cash.index');
+
+
+
+Route::resource('customers', CustomerController::class);
+
+
+
+Route::get('customer-payments/create/{customer}', [CustomerPaymentController::class,'create'])->name('customer.payments.create');
+
+Route::post('customer-payments/store', [CustomerPaymentController::class,'store'])->name('customer.payments.store');

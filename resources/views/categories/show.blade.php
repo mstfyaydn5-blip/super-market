@@ -1,18 +1,36 @@
 @extends('layouts.app')
 
 @section('content')
-<h4 class="mb-3">📁 تفاصيل الصنف</h4>
+<div class="card-soft p-4">
+    <h4 class="mb-3">
+        <i class="bi bi-folder2"></i> {{ $category->name }}
+    </h4>
 
-<div class="card p-4 shadow-sm">
-    <p class="mb-2"><strong>اسم الصنف:</strong> {{ $category->name }}</p>
-    <p class="mb-3"><strong>عدد المنتجات:</strong> {{ $category->products_count ?? 0 }}</p>
+    <p class="text-muted">عدد المنتجات: {{ $category->products->count() }}</p>
 
-    <div class="d-flex gap-2">
-        <a href="{{ route('products.index', ['category_id' => $category->id]) }}" class="btn btn-info">
-            🧾 عرض منتجات الصنف
-        </a>
-        <a href="{{ route('categories.edit', $category) }}" class="btn btn-warning">✏️ تعديل</a>
-        <a href="{{ route('categories.index') }}" class="btn btn-secondary">⬅️ رجوع</a>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>المنتج</th>
+                    <th>السعر</th>
+                    <th>الكمية</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($category->products as $p)
+                    <tr>
+                        <td>{{ $p->name }}</td>
+                        <td>{{ number_format($p->price,2) }}</td>
+                        <td>{{ $p->quantity }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">لا توجد منتجات</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 @endsection

@@ -76,4 +76,10 @@ public function index(Request $request)
             ->route('categories.index')
             ->with('success', '🗑 تم حذف الصنف');
     }
+
+    public function show($id)
+{
+    $category = \App\Models\Category::with('products')->findOrFail($id);
+    return view('categories.show', compact('category'));
+}
 }
