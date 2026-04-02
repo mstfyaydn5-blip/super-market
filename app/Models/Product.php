@@ -40,5 +40,15 @@ class Product extends Model
     return $this->hasMany(ProductActivity::class)->latest();
     }
 
+    public function purchaseItems()
+{
+    return $this->hasMany(\App\Models\PurchaseInvoiceItem::class);
+}
+
+public function saleItems()
+{
+    return $this->hasMany(\App\Models\SaleItem::class);
+}
+
 
 }

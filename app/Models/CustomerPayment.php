@@ -17,9 +17,21 @@ protected $fillable = [
 
 ];
 
+
+
+public function payments()
+{
+    return $this->hasMany(CustomerPayment::class);
+}
+
+public function sales()
+{
+    return $this->hasMany(Sale::class);
+}
+
 public function customer()
 {
-return $this->belongsTo(Customer::class);
+    return $this->belongsTo(\App\Models\Customer::class);
 }
 
 }

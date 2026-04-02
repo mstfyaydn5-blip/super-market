@@ -23,4 +23,9 @@ public function payments()
 return $this->hasMany(CustomerPayment::class);
 }
 
+public function sales()
+{
+    return $this->hasMany(\App\Models\Sale::class);
+}
+
 }
